@@ -1,123 +1,92 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require("body-parser");
+import express from "express";
+import axios from "axios";
+const BASE_URL = 'https://hp-api.onrender.com/api';
+
 const app = express();
-const port =  3000;
+const PORT = 3000;
 
-app.use(express.json());
+const books = [
+    { id: 1, title: "Harry Potter and the Philosopher's Stone", author: "J.K. Rowling" },
+    { id: 2, title: "Harry Potter and the Chamber of Secrets", author: "J.K. Rowling" },
+    { id: 3, title: "Harry Potter and the Prisoner of Azkaban", author: "J.K. Rowling" },
+    { id: 4, title: "Harry Potter and the Goblet of Fire", author: "J.K. Rowling" },
+    { id: 5, title: "Harry Potter and the Order of the Phoenix", author: "J.K. Rowling" },
+    { id: 6, title: "Harry Potter and the Half-Blood Prince", author: "J.K. Rowling" },
+    { id: 7, title: "Harry Potter and the Deathly Hallows", author: "J.K. Rowling" }
+];
 
 
-const connectionURL = 'mongodb://localhost:27017/harrypotter';
-
-mongoose.connect(connectionURL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => {
-    console.log('Connected ');
-}).catch((error) => {
-    console.error('Error connecting', error);
+app.get('/books', (req, res) => {
+    res.json(books);
 });
 
-
-const studentSchema = new mongoose.Schema({
-    id: {
-        type: String,
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    gender: {
-        type: String,
-        required: true
-    },
-    house: {
-        type: String,
-        required: true
-    },
-    wizard: {
-        type: Boolean,
-        required: true
-    }
-});
-const Student = mongoose.model('Student', studentSchema);
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-const houses = ['Gryffindor', 'Hufflepuff', 'Ravenclaw', 'Slytherin'];
+// Root route
 app.get('/', (req, res) => {
     res.send(`
-      <a href="http://localhost:3000/addstudent" target="_blank">Add Student</a><br>
-      <a href="http://localhost:3000/deletestudent" target="_blank">Delete Student</a>
+        To fetch books, search URL '/books'
+        To fetch characters, search '/characters'
+        To fetch spells, search URL '/spells'
+        To fetch Hogwarts staff, search '/hogwarts-staff'
+        To fetch Hogwarts students, search URL '/hogwarts-students'
+        To fetch a character by ID, search '/character/:id'
     `);
-  });
-app.get('/addstudent', (req, res) => {
-    res.send(`
-      <form action="/students" method="POST">
-        <input type="text" placeholder="name" name="name" />
-        <input type="text" placeholder="gender" name="gender" />
-        <input type="text" placeholder="wizard" name="wizard" />
-        <input type="text" placeholder="id" name="id" />
-        <button type="submit">add</button>
-      </form>
-    `);
-  });
-// POST request to create a new student
-app.post('/students', async (req, res) => {
+});
+//  characters
+app.get('/characters', async (req, res) => {
     try {
-        const  id = req.body["id"]
-        const name =req.body["name"]
-        const gender =req.body["gender"] 
-        const wizard = req.body["wizard"]
-        const house = houses[Math.floor(Math.random() * houses.length)];
-
-        const newStudent = new Student({
-            id,
-            name,
-            gender,
-            house,
-            wizard
-        });
-
-        await newStudent.save();
-        res.status(201).send(`
-          <p>Student added successfully</p>
-          <a href="/">Go back to home</a>
-        `);
+        const response = await axios.get(`${BASE_URL}/characters`);
+        res.json(response.data);
     } catch (error) {
-        res.status(400).send({ error: error.message });
+        res.status(500).json({ error: 'Failed to fetch characters' });
     }
-
-});
-app.get('/deletestudent',(req,res)=>{
-    res.send(`
-        <form action="/deletestudent" method="POST">
-          <input type="text" placeholder="id" name="idd" />
-          <button type="submit">delete</button>
-        </form>
-      `);
-})
-app.post('/deletestudent', async (req, res) => {
-  try {
-      const id = req.body["idd"];
-      const student = await Student.findOne({ id });
-
-      if (!student) {
-          return res.status(404).send({ error: 'Student not found' });
-      }
-
-      await Student.deleteOne({ id });
-
-      res.send(`
-        <p>Student with ID ${id} has been deleted.</p>
-        <a href="/">Go back to home</a>
-      `);
-  } catch (error) {
-      res.status(500).send({ error: error.message });
-  }
 });
 
-app.listen(port, () => {
-    console.log(`Server is up and running on port ${port}`);
+//  spells
+app.get('/spells', async (req, res) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/spells`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch spells' });
+    }
+});
+
+// Hogwarts staff
+app.get('/hogwarts-staff', async (req, res) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/staff`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch Hogwarts staff' });
+    }
+});
+
+// students
+app.get('/hogwarts-students', async (req, res) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/students`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch Hogwarts students' });
+    }
+});
+
+//  character by ID
+app.get('/character/:id', async (req, res) => {
+    //const  id  = req.params.id;
+    const id = parseInt(req.params.id);
+    try {
+        const response = await axios.get(`${BASE_URL}/characters`);
+        //const idchar = response.data.find((yup)=> yup.id == id);
+     /* there are two methods used over here method 1 which is commented in which user puts exact id ANDDDD method 2 in whic number is put for
+            for method 1 to run comment line 77,83,84*/
+        const mu = response.data;
+        const idchar =mu[id];
+        res.json(idchar);
+    } catch (error) {
+        res.status(500).json({ error: `Failed to fetch character with ID: ${id}` });
+    }
+});
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
